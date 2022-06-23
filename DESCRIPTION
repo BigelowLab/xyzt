@@ -1,0 +1,18 @@
+Package: xyzt
+Title: xyzt
+Description: Mediate covariate extraction using tabular location data.
+URL: https://github.com/BigelowLab/xyzt
+Version: 0.1
+Depends:
+  R (>= 4.1)
+Imports:
+  rlang,
+  assertthat,
+  dplyr,
+  sf,
+  readr
+Maintainer: Ben Tupper <btupper@bigelow.org>
+Author: Kyle Shehata Oliveira <kyle.oliveira@maine.edu>, Camille Ross <cross@bigelow.org>, Johnathan Evanilla <jevanilla@bigelow.org>
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.1.2
