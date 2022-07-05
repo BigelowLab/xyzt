@@ -13,15 +13,40 @@ Mediate covariate extraction using tabular location data. This package will make
 
 The extraction step is not defined in this package, although we provide a uniform interface for selection of an external application to run the extraction.  For example, suppose you have an application that accepts an `sf POINT` object and returns a table of 'sst' from 'MUR' using your own `murtools` package.  That packe must have a function that accepts any [sf](https://CRAN.R-project.org/package=sf) object (POINT, POLYGON) and will return a table of covariates append-able to you own data set.
 
+### The extraction
+
+What defines an extraction?
+
+  - accepts `sf` object(s)
+     + points
+     + polygons
+     + bounding boxes
+  - returns data frame (`tibble`?) or `stars`
+  - manages missing data how?
+
+### Promoting efficiency
+
+ - What is the granularity of the data source?  Daily? Regional?
+ - Group by date/time (T) - (xyzt? extractor? user-script?)
+ - Group by measure (Z)?
+
+### How to identify an xyzt-ready extractor?
+
+ - Simply state in the README?
+ - Register with xyzt which maintains a list?
+
+
+
+### Pseudo-example
 ```
 dataset <- [some table of data with location and time]
 x <-  dataset |>
   as_POINT() 
   
 covars <- x |>
-  extract(package = "murtools", var = "analysed_sst", "mask")
+  extract(package = "murtools", var = c("analysed_sst", "mask"))
   
-result <- dplyr::bind_cols(dataset, covars)
+combined_result <- dplyr::bind_cols(dataset, covars)
 ```
 
 ### Requirements
