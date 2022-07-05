@@ -36,17 +36,17 @@ as_POINT <- function(x = read_gom(),
   lut <- var_lut()
   dimset <- strsplit(dims, "", fixed = TRUE)[[1]]
   xnames <- colnames(x)
-  ix <- which(xnames %in% lut$x)[1]
+  ix <- which(tolower(xnames) %in% lut$x)[1]
   if (length(ix) == 0){
     stop("input must have one column named one of:", paste(lut$x, collapse = ", "))
   } 
-  iy <- which(xnames %in% lut$y)[1]
+  iy <- which(tolower(xnames) %in% lut$y)[1]
   if (length(iy) == 0){
     stop("input must have one column named one of:", paste(lut$y, collapse = ", "))
   }
   if ("z" %in% dimset){
     hasZ <- TRUE
-    iz <- which(xnames %in% lut$z)[1]
+    iz <- which(tolower(xnames) %in% lut$z)[1]
     if (length(iz) == 0){
       stop("input must have one column named one of:", paste(lut$z, collapse = ", "))
     } 
@@ -55,7 +55,7 @@ as_POINT <- function(x = read_gom(),
   }
   if ("t" %in% dimset){
     hasT <- TRUE
-    it <- which(xnames %in% lut$t)[1]
+    it <- which(tolower(xnames) %in% lut$t)[1]
     if (length(it) == 0){
       stop("input must have one column named one of:", paste(lut$t, collapse = ", "))
     } 
