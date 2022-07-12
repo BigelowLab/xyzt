@@ -92,6 +92,21 @@ suppressPackageStartupMessages({
     ## 4 44011 Georges Bank   -66.6  41.1     0 2022-06-13 03:23:45
     ## 5 44008 Nantucket SE   -69.2  40.5     0 2022-06-07 23:45:56
 
+And a second set from the South Atlantic Bight.
+
+``` r
+(sab <- read_sab())
+```
+
+    ## # A tibble: 5 × 6
+    ##   id    name             lon   lat depth time               
+    ##   <chr> <chr>          <dbl> <dbl> <dbl> <dttm>             
+    ## 1 41009 Canveral       -80.2  28.5  -1.5 2022-06-17 18:05:06
+    ## 2 41010 Canaveral East -78.5  28.9  -1.5 2022-06-29 18:05:06
+    ## 3 41002 South Hatteras -74.9  31.8  -1.5 2022-06-05 18:05:06
+    ## 4 41001 East Hatteras  -72.2  34.7  -2   2022-04-30 18:05:06
+    ## 5 41004 EDISTO         -79.1  32.5  -1.5 2022-07-11 18:05:06
+
 ### Convert to [sf](https://CRAN.R-project.org/package=sf)
 
 Here we show conversion to 2d (‘xy’), 3d (‘xyz’ or ‘xyt’) or 4d (‘xyzt’)
