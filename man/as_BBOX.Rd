@@ -2,18 +2,18 @@
 % Please edit documentation in R/xyzt.R
 \name{as_BBOX}
 \alias{as_BBOX}
-\title{Convert any object to a bounding box POLYGON.  
-Note that attributes (variables) are dropped.}
+\title{Convert any object to a bounding box POLYGON.}
 \usage{
-as_BBOX(x)
+as_BBOX(x, ...)
 }
 \arguments{
 \item{x}{sf object}
+
+\item{...}{arguments for \code{\link{as_POINT}}}
 }
 \value{
 sf object with one POLYGON record
 }
 \description{
-Convert any object to a bounding box POLYGON.  
-Note that attributes (variables) are dropped.
+Note that attributes (variables) are sliced to just the first record attributes.
 }

@@ -3,21 +3,20 @@
 \name{as_POLYGON}
 \alias{as_POLYGON}
 \title{Convert a POINTS object to a POLYGON.  Assumes that the points are ordered
-correctly and not closed (we'll close it for you.) Note that attributes (variables)
-are dropped.}
+correctly and not closed (we'll close it for you.)}
 \usage{
-as_POLYGON(x)
+as_POLYGON(x, ...)
 }
 \arguments{
 \item{x}{POINTS object}
+
+\item{...}{arguments for \code{\link{as_POINT}}}
 }
 \value{
 sf object with one POLYGON record
 }
 \description{
-Convert a POINTS object to a POLYGON.  Assumes that the points are ordered
-correctly and not closed (we'll close it for you.) Note that attributes (variables)
-are dropped.
+Note that attributes (variables) are sliced to just the first record attributes.
 }
 \seealso{
 \href{https://stackoverflow.com/questions/48383990/convert-sequence-of-longitude-and-latitude-to-polygon-via-sf-in-r}{Stackoverflow discussion}

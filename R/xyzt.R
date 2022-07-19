@@ -1,3 +1,15 @@
+#' Retrieve the POSIX epoch
+#' 
+#' @export
+#' @param x character date and time of epoch
+#' @param tz character, time zone
+#' @param ... other arguments for \code{\link[base]{as.POSIXct}}
+#' @return POSIXct time
+POSIX_epoch <- function(x = '1970-01-01 00:00:00', tz = 'UTC', ...){
+  as.POSIXct(x, tz = tz, ...)
+}
+
+
 #' Get geometry dimension code
 #' 
 #' @export
@@ -34,7 +46,7 @@ as_POINT <- function(x = read_gom(),
   if (!inherits(x, "tbl_df")) x <- dplyr::as_tibble(x)
   
   lut <- var_lut()
-  dimset <- strsplit(dims, "", fixed = TRUE)[[1]]
+  dimset <- tolower(strsplit(dims, "", fixed = TRUE)[[1]])
   xnames <- colnames(x)
   ix <- which(tolower(xnames) %in% lut$x)[1]
   if (length(ix) == 0){
@@ -71,35 +83,53 @@ as_POINT <- function(x = read_gom(),
 }
 
 #' Convert a POINTS object to a POLYGON.  Assumes that the points are ordered
-#' correctly and not closed (we'll close it for you.) Note that attributes (variables)
-#' are dropped.
+#' correctly and not closed (we'll close it for you.) 
+#' 
+#' Note that attributes (variables) are sliced to just the first record attributes.
 #' 
 #' @export
 #' @param x POINTS object
+#' @param ... arguments for \code{\link{as_POINT}}
 #' @return sf object with one POLYGON record
 #' @seealso \href{https://stackoverflow.com/questions/48383990/convert-sequence-of-longitude-and-latitude-to-polygon-via-sf-in-r}{Stackoverflow discussion}
-as_POLYGON <- function(x){
-  if(!inherits(x, "sf")) x <- as_POINT(x)
+as_POLYGON <- function(x, ...){
+  if(!inherits(x, "sf")) x <- as_POINT(x, ...)
   g <- sf::st_geometry(x)
   xy <- sf::st_coordinates(g)
-  xy <- sf::st_sfc(sf::st_polygon(list(rbind(xy, xy[1,]))))
-  sf::st_sf(dplyr::tibble(xy), 
-                crs = sf::st_crs(g))
+  d <- get_geometry_dimension(x)
+  if (nchar(d) == 3){
+    gc <- sf::st_coordinates(x) 
+    xy <- cbind(xy, rep(gc[1,3], nrow(xy)))
+  }
+  p <- sf::st_polygon(list(rbind(xy, xy[1,])))
+  xy <- sf::st_sfc(p, crs = sf::st_crs(g))
+  dplyr::slice(x, 1) |>             # retain first row of attributes
+    sf::st_set_geometry(xy) |>      # first set the geometry column
+    sf::st_set_geometry("geometry") # then rename it
 }
 
 #' Convert any object to a bounding box POLYGON.  
-#' Note that attributes (variables) are dropped.
+#' 
+#' Note that attributes (variables) are sliced to just the first record attributes.
 #' 
 #' @export
 #' @param x sf object
+#' @param ... arguments for \code{\link{as_POINT}}
 #' @return sf object with one POLYGON record
-as_BBOX <- function(x){
-  if(!inherits(x, "sfc")) x <- as_POINT(x)
-  bb <- sf::st_bbox(x)
+as_BBOX <- function(x, ...){
+  if(!inherits(x, "sf")) x <- as_POINT(x, ...)
+  bb <- sf::st_bbox(x) |> as.numeric() |> unname()
   xy <- cbind(bb[c(1,3,3,1,1)], bb[c(2,2,4,4,2)])
-  xy <- sf::st_sfc(sf::st_polygon(list(xy)))
-  sf::st_sf(xy, 
-            crs = sf::st_crs(x))
+  d <- get_geometry_dimension(x)
+  if (nchar(d) == 3){
+    gc <- sf::st_coordinates(x) 
+    xy <- cbind(xy, rep(gc[1,3], nrow(xy)))
+  }
+  p <- sf::st_polygon(list(xy))
+  xy <- sf::st_sfc(p, crs = sf::st_crs(x))
+  dplyr::slice(x, 1) |>            # retain first row of attributes
+   sf::st_set_geometry(xy) |>      # first set the geometry column
+   sf::st_set_geometry("geometry") # then rename it
 }
 
 

@@ -81,10 +81,13 @@ suppressPackageStartupMessages({
 (x <- read_gom())
 ```
 
-And a second set from the South Atlantic Bight.
+And a second set from the South Atlantic Bight. But perhaps you need the longitudes shifted to range [0,360] rather than [-180, 180].
 
 ```{r}
-(sab <- read_sab())
+sab <- read_sab()
+cat("lon range before:", paste(range(sab$lon), collapse = ", "), "\n")
+sab$lon <- xyzt::to_360(sab$lon)
+cat("lon range after:", paste(range(sab$lon), collapse = ", "), "\n")
 ```
 
 
