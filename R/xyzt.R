@@ -121,9 +121,13 @@ as_BBOX <- function(x, ...){
   bb <- sf::st_bbox(x) |> as.numeric() |> unname()
   xy <- cbind(bb[c(1,3,3,1,1)], bb[c(2,2,4,4,2)])
   d <- get_geometry_dimension(x)
-  if (nchar(d) == 3){
+  nd <- nchar(d)
+  if (nd == 3){
     gc <- sf::st_coordinates(x) 
     xy <- cbind(xy, rep(gc[1,3], nrow(xy)))
+  } else if (nd == 4){
+    gc <- sf::st_coordinates(x)
+    xy <- cbind(xy, rep(gc[1,3], nrow(xy)), rep(gc[1,4], nrow(xy)))
   }
   p <- sf::st_polygon(list(xy))
   xy <- sf::st_sfc(p, crs = sf::st_crs(x))
