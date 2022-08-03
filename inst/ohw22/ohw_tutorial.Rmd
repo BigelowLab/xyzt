@@ -1,5 +1,5 @@
 ---
-title: "Mediating covariates for ecological modelers using point-based observational data"
+title: "Accessing covariates for ecological modelers using point-based observational data"
 author: "Johnathan Evanilla"
 date: "8/1/2022"
 output: ioslides_presentation
@@ -9,10 +9,11 @@ output: ioslides_presentation
 
 ```{r}
 suppressPackageStartupMessages({
+  # from CRAN
   library(dplyr)
   library(sf)
   library(stars)
-  
+  # from Github
   library(xyzt)
   library(obpg)
   library(ghrsst)
@@ -26,13 +27,12 @@ suppressPackageStartupMessages({
 
 ```{r cars, echo = TRUE}
 x <- xyzt::read_calcofi()
-
-x
+dplyr::glimpse(x)
 ```
 
 ## Change to SF Object
 
-```{r pressure}
+```{r points}
 points <- x |>
   select(-depth) |>
   xyzt::as_POINT()

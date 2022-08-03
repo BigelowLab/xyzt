@@ -41,7 +41,22 @@ read_sab <- function(filename = system.file(file.path("extdata", "sab.csv"),
 #' @return a tibble of CalCOFI points
 read_calcofi <- function(url = "https://calcofi.org/downloads/maps/CalCOFIStationOrder.csv") {
   
-  readr::read_csv(url) |>
+  readr::read_csv(url,
+                  col_types = readr::cols(
+                    `Order Occ` = readr::col_double(),
+                    Line = readr::col_double(),
+                    Sta = readr::col_double(),
+                    `Lat (dec)` = readr::col_double(),
+                    `Lat (deg)` = readr::col_double(),
+                    `Lat (min)` = readr::col_double(),
+                    `Lat (deg min)` = readr::col_character(),
+                    `Lon (dec)` = readr::col_double(),
+                    `Lon (deg)` = readr::col_double(),
+                    `Lon (min)` = readr::col_double(),
+                    `Lon (deg min)` = readr::col_character(),
+                    `Est Depth` = readr::col_double(),
+                    `Sta Type` = readr::col_character()
+                  )) |>
     dplyr::select(.data$`Order Occ`,
                   .data$`Lat (dec)`, 
                   .data$`Lon (dec)`, 
