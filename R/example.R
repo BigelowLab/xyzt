@@ -32,3 +32,22 @@ read_sab <- function(filename = system.file(file.path("extdata", "sab.csv"),
                     depth = readr::col_double(),
                     time = readr::col_datetime(format = "") ))
 }
+
+
+#' Read an example point dataset for the CalCOFI Sampling Stations (since 1984)
+#' 
+#' @export
+#' @param url character string url to data
+#' @return a tibble of CalCOFI points
+read_calcofi <- function(url = "https://calcofi.org/downloads/maps/CalCOFIStationOrder.csv") {
+  
+  readr::read_csv(url) |>
+    dplyr::select(.data$`Order Occ`,
+                  .data$`Lat (dec)`, 
+                  .data$`Lon (dec)`, 
+                  .data$`Est Depth`) |>
+    dplyr::rename(station = .data$`Order Occ`,
+                  lat = .data$`Lat (dec)`,
+                  lon = .data$`Lon (dec)`,
+                  depth = .data$`Est Depth`)
+}

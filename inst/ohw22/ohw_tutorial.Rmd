@@ -1,0 +1,107 @@
+---
+title: "Mediating covariates for ecological modelers using point-based observational data"
+author: "Johnathan Evanilla"
+date: "8/1/2022"
+output: ioslides_presentation
+---
+
+## Load Packages
+
+```{r}
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(sf)
+  library(stars)
+  
+  library(xyzt)
+  library(obpg)
+  library(ghrsst)
+})
+
+```
+
+
+## Read in South Atlantic Bight (SAB) Points
+
+
+```{r cars, echo = TRUE}
+x <- xyzt::read_calcofi()
+
+x
+```
+
+## Change to SF Object
+
+```{r pressure}
+points <- x |>
+  select(-depth) |>
+  xyzt::as_POINT()
+
+points
+```
+
+
+## Build a URL to the data
+
+
+```{r}
+url <- mur_url("2020-07-12")
+
+url
+```
+
+## Open a connection to the data
+
+```{r}
+X <- ncdf4::nc_open(url)
+```
+
+## Extract the points
+
+```{r}
+covars <- ghrsst::extract(points, X, varname = ghrsst::mur_vars(X))
+
+covars
+```
+
+## Bind the point data back to the original table
+
+```{r}
+(y <- dplyr::bind_cols(points, covars))
+
+y
+```
+
+
+## Extract data for a bounding box
+
+```{r}
+bbox <- points |>
+  xyzt::as_BBOX()
+
+bbox
+```
+
+## Extract the layer of data
+
+```{r}
+covars <- ghrsst::extract(bbox, X, varname = ghrsst::mur_vars(X))
+
+covars
+```
+
+```{r}
+x <- xyzt::read_gom() |>
+  dplyr::select(-time, -depth) |>
+  xyzt::as_BBOX()
+
+covars <- ghrsst::extract(bbox, X, varname = ghrsst::mur_vars(X))
+```
+
+
+## Close the connection
+
+```{r}
+ncdf4::nc_close(X)
+```
+
