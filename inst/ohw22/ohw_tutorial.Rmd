@@ -13,6 +13,7 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(sf)
   library(stars)
+  
   # from Github
   library(xyzt)
   library(obpg)
@@ -22,12 +23,50 @@ suppressPackageStartupMessages({
 ```
 
 
+## Basic R data tools
+
+
+##https://cn.dataone.org/cn/v2/resolve/e6dd10e1-baae-4c33-95d3-fc73bbb7c186
+
+
+
+```{r}
+drift <- read_csv("https://apps-nefsc.fisheries.noaa.gov/drifter/drift_wnerr_2021_1.csv")
+```
+
+```{r}
+summary(drift)
+```
+
+```{r}
+drift |> count(ID)
+```
+
+```{r}
+drift <- drift |> 
+  mutate(date = as.Date(paste(2022, MTH, DAY, sep="-")))
+```
+
+
+```{r}
+summary(drift)
+```
+```{r}
+str(drift)
+```
+
+
 ## Read in South Atlantic Bight (SAB) Points
 
 
 ```{r cars, echo = TRUE}
 x <- xyzt::read_calcofi()
-dplyr::glimpse(x)
+
+x
+```
+
+```{r}
+glimpse(x)
 ```
 
 ## Change to SF Object
@@ -45,7 +84,7 @@ points
 
 
 ```{r}
-url <- mur_url("2020-07-12")
+url <- mur_url("2015-07-06")
 
 url
 ```
@@ -56,10 +95,18 @@ url
 X <- ncdf4::nc_open(url)
 ```
 
+
+```{r}
+ghrsst::mur_vars(X)
+```
+
+
 ## Extract the points
 
 ```{r}
-covars <- ghrsst::extract(points, X, varname = ghrsst::mur_vars(X))
+covars <- ghrsst::extract(points, 
+                          X, 
+                          varname = "analysed_sst")
 
 covars
 ```
@@ -67,7 +114,7 @@ covars
 ## Bind the point data back to the original table
 
 ```{r}
-(y <- dplyr::bind_cols(points, covars))
+(y <- dplyr::bind_cols(x, covars))
 
 y
 ```
@@ -82,20 +129,24 @@ bbox <- points |>
 bbox
 ```
 
+
+
 ## Extract the layer of data
 
 ```{r}
-covars <- ghrsst::extract(bbox, X, varname = ghrsst::mur_vars(X))
+covars <- ghrsst::extract(bbox, 
+                          X, 
+                          varname = "analysed_sst")
 
 covars
 ```
 
 ```{r}
-x <- xyzt::read_gom() |>
-  dplyr::select(-time, -depth) |>
-  xyzt::as_BBOX()
 
-covars <- ghrsst::extract(bbox, X, varname = ghrsst::mur_vars(X))
+par(mfrow = c(1,2))
+plot(covars, attr = 'analysed_sst', col = sf.colors(n=8), axes = TRUE, reset = FALSE)
+plot(sf::st_geometry(points), add = TRUE, col = "black", pch = 19, cex = 1)
+
 ```
 
 
