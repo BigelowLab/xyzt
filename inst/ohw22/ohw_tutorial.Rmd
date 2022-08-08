@@ -13,11 +13,14 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(sf)
   library(stars)
+  library(readr)
   
   # from Github
   library(xyzt)
-  library(obpg)
   library(ghrsst)
+  library(bsw)
+  library(obpg)
+  library(hycom)
 })
 
 ```
@@ -28,10 +31,13 @@ suppressPackageStartupMessages({
 
 ##https://cn.dataone.org/cn/v2/resolve/e6dd10e1-baae-4c33-95d3-fc73bbb7c186
 
+[Drifter Data Listing](https://apps-nefsc.fisheries.noaa.gov/drifter/)
 
 
 ```{r}
 drift <- read_csv("https://apps-nefsc.fisheries.noaa.gov/drifter/drift_wnerr_2021_1.csv")
+
+drift
 ```
 
 ```{r}
@@ -39,28 +45,43 @@ summary(drift)
 ```
 
 ```{r}
-drift |> count(ID)
+drift |> 
+  count(ID)
 ```
 
 ```{r}
 drift <- drift |> 
-  mutate(date = as.Date(paste(2022, MTH, DAY, sep="-")))
+  mutate(date = as.Date(paste(2021, MTH, DAY, sep="-"))) |>
+  select(ID, LON, LAT, date, HR_GMT)
+
+drift
 ```
 
 
-```{r}
-summary(drift)
-```
 ```{r}
 str(drift)
 ```
 
 
-## Read in South Atlantic Bight (SAB) Points
+```{r}
+drift_sub <- drift |>
+  filter(ID %in% c("217430703", "217430701", "217430704"),
+         #between(date, as.Date("2021-07-13"), as.Date("2021-08-31")),
+         HR_GMT == 18)
+```
+
+
+```{r}
+drift_sub
+```
+
+
+## Read in CalCOFI Points
 
 
 ```{r cars, echo = TRUE}
-x <- xyzt::read_calcofi()
+x <- xyzt::read_calcofi() |>
+  head(n=12)
 
 x
 ```
@@ -78,6 +99,7 @@ points <- x |>
 
 points
 ```
+
 
 
 ## Build a URL to the data
@@ -134,19 +156,17 @@ bbox
 ## Extract the layer of data
 
 ```{r}
-covars <- ghrsst::extract(bbox, 
+layer <- ghrsst::extract(bbox, 
                           X, 
                           varname = "analysed_sst")
 
-covars
+layer
 ```
 
 ```{r}
-
 par(mfrow = c(1,2))
-plot(covars, attr = 'analysed_sst', col = sf.colors(n=8), axes = TRUE, reset = FALSE)
+plot(layer, attr = 'analysed_sst', col = sf.colors(n=6), axes = TRUE, reset = FALSE)
 plot(sf::st_geometry(points), add = TRUE, col = "black", pch = 19, cex = 1)
-
 ```
 
 
@@ -155,4 +175,77 @@ plot(sf::st_geometry(points), add = TRUE, col = "black", pch = 19, cex = 1)
 ```{r}
 ncdf4::nc_close(X)
 ```
+
+
+
+
+## Extract point based data for a series of dates from multiple sources
+
+
+```{r}
+
+get_covars <- function(tbl, key) {
+  
+  # GHRSST
+  mur_url <- mur_url(as.Date(key$date[1]))
+  mur <- ncdf4::nc_open(mur_url)
+  mur_covars <- ghrsst::extract(tbl |> as_POINT(), mur, varname = "analysed_sst")
+  ncdf4::nc_close(mur)
+  
+  
+ # Blended Sea Winds
+ bsw_url <- bsw_url(product="Aggregation_of_6h_Ocean_Wind")
+ bsw <- ncdf4::nc_open(bsw_url)
+ bsw_covars <- bsw::extract(tbl |> 
+                              dplyr::mutate(LON = xyzt::to_360(LON)) |>
+                              xyzt::as_POINT(dims = "xyt"),
+                            bsw,
+                            varname = c("u","v"))
+ ncdf4::nc_close(bsw)
+  
+  
+ # # OBPG Chlor A
+ # obpg_url <- obpg_url(as.Date(key$date[1]),
+ #                      level = "L3SMI",
+ #                      mission = "MODISA",
+ #                      src = "AQUA_MODIS",
+ #                      period = "DAY",
+ #                      product =   "CHL.chlor_a",
+ #                      resolution = "9km")
+ # obpg <- ncdf4::nc_open(obpg_url)
+ # obpg_covars <- obpg::extract(tbl |> as_POINT(),
+ #                             obpg,
+ #                             varname = "chlor_a")
+ # ncdf4::nc_close(obpg)
+  
+  # HyCOM 
+  
+  hycom_url <- hycom::hycom_url(filename = "ts3z")
+  hycom <- ncdf4::nc_open(hycom_url)
+  hycom_covars <- hycom::extract(tbl |> mutate(depth=1,
+                                               LON = xyzt::to_360(LON)) |> 
+                                   as_POINT(dims = "xyzt"),
+                                  hycom,
+                                  varname="salinity")
+  ncdf4::nc_close()
+  
+  r <- bind_cols(tbl, mur_covars, bsw_vars, hycom_covars)
+  
+  r <- bind_cols(tbl, mur_covars, hycom_covars, bsw_covars)
+  
+  r
+}
+
+```
+
+
+```{r}
+xx <- drift_sub |>
+  group_by(date) |>
+  group_map(get_covars, .keep=TRUE) |>
+  bind_rows()
+
+xx
+```
+
 
