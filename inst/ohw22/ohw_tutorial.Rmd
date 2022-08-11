@@ -5,6 +5,10 @@ date: "8/1/2022"
 output: ioslides_presentation
 ---
 
+
+Add Youtube Video Link ()
+ 
+
 ## Load Packages
 
 ```{r}
@@ -18,7 +22,6 @@ suppressPackageStartupMessages({
   # from Github
   library(xyzt)
   library(ghrsst)
-  library(bsw)
   library(obpg)
   library(hycom)
 })
@@ -51,8 +54,9 @@ drift |>
 
 ```{r}
 drift <- drift |> 
-  mutate(date = as.Date(paste(2021, MTH, DAY, sep="-"))) |>
-  select(ID, LON, LAT, date, HR_GMT)
+  mutate(date = as.Date(paste(2021, MTH, DAY, sep="-")),
+         date_time = as.POSIXct(sprintf("%s-%s-%s %s:%s:00", 2021, MTH, DAY, HR_GMT, MIN))) |>
+  select(ID, LAT, LON, date, date_time)
 
 drift
 ```
@@ -65,9 +69,7 @@ str(drift)
 
 ```{r}
 drift_sub <- drift |>
-  filter(ID %in% c("217430703", "217430701", "217430704"),
-         #between(date, as.Date("2021-07-13"), as.Date("2021-08-31")),
-         HR_GMT == 18)
+  filter(ID %in% c("217430703", "217430701", "217430704"))
 ```
 
 
@@ -75,13 +77,17 @@ drift_sub <- drift |>
 drift_sub
 ```
 
+```{r}
+drift_sub |>
+  xyzt::as_POINT(dims="xyt")
+```
+
 
 ## Read in CalCOFI Points
 
 
 ```{r cars, echo = TRUE}
-x <- xyzt::read_calcofi() |>
-  head(n=12)
+x <- xyzt::read_calcofi()
 
 x
 ```
@@ -193,33 +199,22 @@ get_covars <- function(tbl, key) {
   ncdf4::nc_close(mur)
   
   
- # Blended Sea Winds
- bsw_url <- bsw_url(product="Aggregation_of_6h_Ocean_Wind")
- bsw <- ncdf4::nc_open(bsw_url)
- bsw_covars <- bsw::extract(tbl |> 
-                              dplyr::mutate(LON = xyzt::to_360(LON)) |>
-                              xyzt::as_POINT(dims = "xyt"),
-                            bsw,
-                            varname = c("u","v"))
- ncdf4::nc_close(bsw)
-  
-  
- # # OBPG Chlor A
- # obpg_url <- obpg_url(as.Date(key$date[1]),
- #                      level = "L3SMI",
- #                      mission = "MODISA",
- #                      src = "AQUA_MODIS",
- #                      period = "DAY",
- #                      product =   "CHL.chlor_a",
- #                      resolution = "9km")
- # obpg <- ncdf4::nc_open(obpg_url)
- # obpg_covars <- obpg::extract(tbl |> as_POINT(),
- #                             obpg,
- #                             varname = "chlor_a")
- # ncdf4::nc_close(obpg)
+  # OBPG Chlor A
+  obpg_url <- obpg_url(as.Date(key$date[1]),
+                       level = "L3SMI",
+                       mission = "MODIS",
+                       instrument = "AQUA",
+                       product =   "CHL.chlor_a",
+                       resolution = "4km")
+  obpg <- ncdf4::nc_open(obpg_url)
+  obpg_covars <- obpg::extract(tbl |> as_POINT(),
+                              obpg,
+                              varname = "chlor_a")
+  ncdf4::nc_close(obpg)
+ 
+ 
   
   # HyCOM 
-  
   hycom_url <- hycom::hycom_url(filename = "ts3z")
   hycom <- ncdf4::nc_open(hycom_url)
   hycom_covars <- hycom::extract(tbl |> mutate(depth=1,
@@ -227,15 +222,21 @@ get_covars <- function(tbl, key) {
                                    as_POINT(dims = "xyzt"),
                                   hycom,
                                   varname="salinity")
-  ncdf4::nc_close()
+  ncdf4::nc_close(hycom)
   
-  r <- bind_cols(tbl, mur_covars, bsw_vars, hycom_covars)
   
-  r <- bind_cols(tbl, mur_covars, hycom_covars, bsw_covars)
+  # Bind them all together to return
+  r <- bind_cols(tbl, mur_covars, obpg_covars, hycom_covars)
   
   r
 }
 
+```
+
+
+```{r}
+tbl <- drift_sub |>
+  filter(date=)
 ```
 
 
@@ -247,5 +248,7 @@ xx <- drift_sub |>
 
 xx
 ```
+
+
 
 
