@@ -232,7 +232,7 @@ map("world", add = TRUE, lwd = 2)
 ### Example raster data
 
 Raster data (images, grids, etc) have a convenient container, `stars`,
-that follows the `same`sf`paradigm.`stars\` objects are list-like
+that follows the same `sf` paradigm. `stars` objects are list-like
 objects with special attributes.
 
 ``` r
@@ -322,7 +322,8 @@ day1[['analysed_sst']] |>
 
     ##  num [1:923, 1:802] 291 291 291 291 291 ...
 
-Speaking of layers, we can layer these two…
+Speaking of layers, we can layer these two. Notice how we pick up a time
+dimension, which applies to each variable.
 
 ``` r
 days <- c(day1, day2, 
@@ -388,3 +389,94 @@ p <- stars::st_extract(day1, at = x) |>
     ## 8  POINT (-118.5542 32.34637)
     ## 9   POINT (-118.894 32.17971)
     ## 10 POINT (-119.2331 32.01304)
+
+### Extracting along a path
+
+With a bit of hoop-jumping we can convert the station locations into a
+pseudo-path that we can imagine the ship to have taken. I gloss over the
+details, but essential we’ll convert the 133 feature data set into a
+single feature dataset with multiple points, then segmentize by
+interpolating an assumed location every \~500m between stations, and
+then unpack that into individual features Doing this we go to from 113
+locations to almost 20,000 locations, but note that we lose any
+association with the original metadata.
+
+``` r
+path <- sf::st_combine(x) |>
+  sf::st_cast("LINESTRING") |>
+  sf::st_segmentize(500) |>
+  sf::st_cast("POINT")
+path
+```
+
+    ## Geometry set for 19785 features 
+    ## Geometry type: POINT
+    ## Dimension:     XY
+    ## Bounding box:  xmin: -126.4856 ymin: 29.84637 xmax: -117.2736 ymax: 37.84743
+    ## Geodetic CRS:  WGS 84
+    ## First 5 geometries:
+
+    ## POINT (-117.3054 32.95637)
+
+    ## POINT (-117.3014 32.95546)
+
+    ## POINT (-117.2974 32.95454)
+
+    ## POINT (-117.2935 32.95363)
+
+    ## POINT (-117.2895 32.95271)
+
+Let’s show these locations on the sst map for each day.
+
+``` r
+plot(days['analysed_sst'],
+     hook = function(){plot(path, col = 'orange', pch = ".", add = TRUE)})
+```
+
+    ## downsample set to 1
+
+![](terra_stars_files/figure-gfm/multi%20layer%20plot-1.png)<!-- -->
+
+OK - now how about getting the sst value for each day?
+
+``` r
+points <- sf::st_cast(path, "POINT")
+sst <- stars::st_extract(days['analysed_sst'], at = points) |>
+  sf::st_as_sf()
+sst
+```
+
+    ## Simple feature collection with 19785 features and 2 fields
+    ## Geometry type: POINT
+    ## Dimension:     XY
+    ## Bounding box:  xmin: -126.4856 ymin: 29.84637 xmax: -117.2736 ymax: 37.84743
+    ## Geodetic CRS:  WGS 84
+    ## First 10 features:
+    ##    2018-09-14 2018-12-18                   geometry
+    ## 1     296.125    290.180 POINT (-117.3054 32.95637)
+    ## 2     296.074    290.106 POINT (-117.3014 32.95546)
+    ## 3     296.074    290.106 POINT (-117.2974 32.95454)
+    ## 4     296.043    290.041 POINT (-117.2935 32.95363)
+    ## 5     296.043    290.041 POINT (-117.2895 32.95271)
+    ## 6     296.043    290.041  POINT (-117.2855 32.9518)
+    ## 7     296.024    289.986 POINT (-117.2815 32.95088)
+    ## 8     296.024    289.986 POINT (-117.2775 32.94997)
+    ## 9          NA         NA POINT (-117.2736 32.94905)
+    ## 10    296.024    289.986 POINT (-117.2751 32.95135)
+
+And let’s see that map again, this time showing the temperature
+difference.
+
+``` r
+sst <- sst |>
+  dplyr::mutate(diff = `2018-12-18` - `2018-09-14`)
+
+plot(days['analysed_sst'],
+     hook = function(){
+       plot(sst["diff"], breaks = pretty(sst$diff), add = TRUE)
+       })
+```
+
+    ## downsample set to 1
+
+![](terra_stars_files/figure-gfm/plot%20sst-1.png)<!-- -->

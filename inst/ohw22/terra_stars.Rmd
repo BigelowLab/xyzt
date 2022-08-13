@@ -122,7 +122,7 @@ map("world", add = TRUE, lwd = 2)
 
 ### Example raster data
 
-Raster data (images, grids, etc) have a convenient container, `stars`, that follows the `same`sf` paradigm.  `stars` objects are list-like objects with special attributes.  
+Raster data (images, grids, etc) have a convenient container, `stars`, that follows the same `sf` paradigm.  `stars` objects are list-like objects with special attributes.  
 
 ```{r make a bbox}
 bb <- xyzt::as_BBOX(x) |>
@@ -173,7 +173,7 @@ day1[['analysed_sst']] |>
   str()
 ```
 
-Speaking of layers, we can layer these two...
+Speaking of layers, we can layer these two.  Notice how we pick up a time dimension, which applies to each variable.
 
 ```{r layering}
 days <- c(day1, day2, 
@@ -193,4 +193,44 @@ days[['analysed_sst']] |>
 ```{r extract points}
 p <- stars::st_extract(day1, at = x) |>
   print()
+```
+
+### Extracting along a path
+
+With a bit of hoop-jumping we can convert the station locations into a pseudo-path that we can imagine the ship to have taken.  I gloss over the details, but essential we'll convert the 133 feature data set into a single feature dataset with multiple points, then segmentize by interpolating an assumed location every ~500m between stations, and then unpack that into individual features Doing this we go to from 113 locations to almost 20,000 locations, but note that we lose any association with the original metadata.
+
+```{r multipoint}
+path <- sf::st_combine(x) |>
+  sf::st_cast("LINESTRING") |>
+  sf::st_segmentize(500) |>
+  sf::st_cast("POINT")
+path
+```
+
+Let's show these locations on the sst map for each day.
+
+```{r multi layer plot}
+plot(days['analysed_sst'],
+     hook = function(){plot(path, col = 'orange', pch = ".", add = TRUE)})
+```
+
+OK - now how about getting the sst value for each day?
+
+```{r extract}
+points <- sf::st_cast(path, "POINT")
+sst <- stars::st_extract(days['analysed_sst'], at = points) |>
+  sf::st_as_sf()
+sst
+```
+
+And let's see that map again, this time showing the temperature difference.
+
+```{r plot sst}
+sst <- sst |>
+  dplyr::mutate(diff = `2018-12-18` - `2018-09-14`)
+
+plot(days['analysed_sst'],
+     hook = function(){
+       plot(sst["diff"], breaks = pretty(sst$diff), add = TRUE)
+       })
 ```
