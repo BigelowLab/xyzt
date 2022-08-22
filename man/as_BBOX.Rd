@@ -2,18 +2,26 @@
 % Please edit documentation in R/xyzt.R
 \name{as_BBOX}
 \alias{as_BBOX}
-\title{Convert any object to a bounding box POLYGON.}
+\title{Convert any object to a 2d bounding box \code{bbox} or \code{POLYGON}.}
 \usage{
-as_BBOX(x, ...)
+as_BBOX(x, form = c("POLYGON", "bbox")[1], buffer = c(0, 0), ...)
 }
 \arguments{
 \item{x}{sf object}
 
+\item{form}{character, one of "POLYGON" or "bbox" to determine
+the class of the data returned.  See \code{\link[sf]{st_bbox}}.}
+
+\item{buffer}{one or two element positive numeric, used to buffer the bounding
+box by this much in the [x,y] directions.  A very simplistic approach
+see if \code{\link[sf]{st_buffer}} might be better.  By default there is
+no buffer.}
+
 \item{...}{arguments for \code{\link{as_POINT}}}
 }
 \value{
-sf object with one POLYGON record
+sf object with one POLYGON record OR a \code{st_bbox} object
 }
 \description{
-Note that attributes (variables) are sliced to just the first record attributes.
+Convert any object to a 2d bounding box \code{bbox} or \code{POLYGON}.
 }

@@ -97,30 +97,6 @@ as_POLYGON <- function(x, ...){
   g <- sf::st_geometry(x)
   xy <- sf::st_coordinates(g)
   d <- get_geometry_dimension(x)
-  if (nchar(d) == 3){
-    gc <- sf::st_coordinates(x) 
-    xy <- cbind(xy, rep(gc[1,3], nrow(xy)))
-  }
-  p <- sf::st_polygon(list(rbind(xy, xy[1,])))
-  xy <- sf::st_sfc(p, crs = sf::st_crs(g))
-  dplyr::slice(x, 1) |>             # retain first row of attributes
-    sf::st_set_geometry(xy) |>      # first set the geometry column
-    sf::st_set_geometry("geometry") # then rename it
-}
-
-#' Convert any object to a bounding box POLYGON.  
-#' 
-#' Note that attributes (variables) are sliced to just the first record attributes.
-#' 
-#' @export
-#' @param x sf object
-#' @param ... arguments for \code{\link{as_POINT}}
-#' @return sf object with one POLYGON record
-as_BBOX <- function(x, ...){
-  if(!inherits(x, "sf")) x <- as_POINT(x, ...)
-  bb <- sf::st_bbox(x) |> as.numeric() |> unname()
-  xy <- cbind(bb[c(1,3,3,1,1)], bb[c(2,2,4,4,2)])
-  d <- get_geometry_dimension(x)
   nd <- nchar(d)
   if (nd == 3){
     gc <- sf::st_coordinates(x) 
@@ -129,11 +105,53 @@ as_BBOX <- function(x, ...){
     gc <- sf::st_coordinates(x)
     xy <- cbind(xy, rep(gc[1,3], nrow(xy)), rep(gc[1,4], nrow(xy)))
   }
-  p <- sf::st_polygon(list(xy))
-  xy <- sf::st_sfc(p, crs = sf::st_crs(x))
-  dplyr::slice(x, 1) |>            # retain first row of attributes
-   sf::st_set_geometry(xy) |>      # first set the geometry column
-   sf::st_set_geometry("geometry") # then rename it
+  p <- sf::st_polygon(list(rbind(xy, xy[1,])))
+  xy <- sf::st_sfc(p, crs = sf::st_crs(g))
+  dplyr::slice(x, 1) |>             # retain first row of attributes
+    sf::st_set_geometry(xy) |>      # first set the geometry column
+    sf::st_set_geometry("geometry") # then rename it
+}
+
+#' Convert any object to a 2d bounding box \code{bbox} or \code{POLYGON}.  
+#' 
+#' @export
+#' @param x sf object
+#' @param form character, one of "POLYGON" or "bbox" to determine
+#'   the class of the data returned.  See \code{\link[sf]{st_bbox}}.
+#' @param buffer one or two element positive numeric, used to buffer the bounding
+#'   box by this much in the [x,y] directions.  A very simplistic approach
+#'   see if \code{\link[sf]{st_buffer}} might be better.  By default there is
+#'   no buffer.
+#' @param ... arguments for \code{\link{as_POINT}}
+#' @return sf object with one POLYGON record OR a \code{st_bbox} object
+as_BBOX <- function(x, 
+                    form = c("POLYGON", "bbox")[1], 
+                    buffer = c(0,0),
+                    ...){
+  
+  if(!inherits(x, "sf")) x <- as_POINT(x, ...)
+  bb <- sf::st_bbox(x) 
+  if (length(buffer) == 1) buffer <- c(buffer, buffer)
+  bb <- bb + c(-buffer, buffer)
+  if (tolower(form[1]) == "polygon"){
+    bb <- sf::st_as_sfc(bb, crs = sf::st_crs(x))
+  }
+  bb
+  #xy <- cbind(bb[c(1,3,3,1,1)], bb[c(2,2,4,4,2)])
+  #d <- get_geometry_dimension(x)
+  #nd <- nchar(d)
+  #if (nd == 3){
+  #  gc <- sf::st_coordinates(x) 
+  #  xy <- cbind(xy, rep(gc[1,3], nrow(xy)))
+  #} else if (nd == 4){
+  #  gc <- sf::st_coordinates(x)
+  #  xy <- cbind(xy, rep(gc[1,3], nrow(xy)), rep(gc[1,4], nrow(xy)))
+  #}
+  #p <- sf::st_polygon(list(xy))
+  #xy <- sf::st_sfc(p, crs = sf::st_crs(x))
+  #dplyr::slice(x, 1) |>            # retain first row of attributes
+  # sf::st_set_geometry(xy) |>      # first set the geometry column
+  # sf::st_set_geometry("geometry") # then rename it
 }
 
 
