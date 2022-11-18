@@ -4,10 +4,13 @@
 \alias{get_geometry_type}
 \title{Get geometry type code}
 \usage{
-get_geometry_type(x)
+get_geometry_type(x, recursive = FALSE)
 }
 \arguments{
 \item{x}{sf or sfc object}
+
+\item{recursive}{logical, if TRUE drill down to get the type for each
+feature.}
 }
 \value{
 character vector such as "POINT" or "POLYGON"

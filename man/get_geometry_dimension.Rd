@@ -8,6 +8,9 @@ get_geometry_dimension(x)
 }
 \arguments{
 \item{x}{sf or sfc object}
+
+\item{recursive}{logical, if TRUE drill down to get the type for each
+feature.}
 }
 \value{
 character vector such as "XY" or "XYZ"

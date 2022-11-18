@@ -14,20 +14,37 @@ POSIX_epoch <- function(x = '1970-01-01 00:00:00', tz = 'UTC', ...){
 #' 
 #' @export
 #' @param x sf or sfc object
+#' @param recursive logical, if TRUE drill down to get the type for each
+#'   feature.
 #' @return character vector such as "XY" or "XYZ"
 get_geometry_dimension <- function(x){
-  x <- sf::st_geometry(x)
-  sort(unique(sapply(x, function(x) class(x)[1])))
+  if (recursive[1]){
+    x <- sf::st_geometry(x)
+    d <- sapply(x,
+                function(x) {
+                  sort(unique(sapply(x, function(x) class(x)[1])))
+                })
+  } else {
+    x <- sf::st_geometry(x)
+    d <- sort(unique(sapply(x, function(x) class(x)[1])))
+  }
+  d
 }
 
 #' Get geometry type code
 #' 
 #' @export
 #' @param x sf or sfc object
+#' @param recursive logical, if TRUE drill down to get the type for each
+#'   feature.
 #' @return character vector such as "POINT" or "POLYGON"
-get_geometry_type <- function(x){
-  klass <- sf::st_geometry(x) |>
-    class()
+get_geometry_type <- function(x, recursive = FALSE){
+  if (recursive[1]){
+    klass <- sapply(sf::st_geometry(x), class)
+  } else {
+    klass <- sf::st_geometry(x) |>
+      class()
+  }
   sub("sfc_", "", klass[1])
 }
 
